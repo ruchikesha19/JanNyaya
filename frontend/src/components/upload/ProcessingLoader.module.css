@@ -1,0 +1,249 @@
+.container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - var(--header-h));
+    padding: var(--space-8);
+    overflow: hidden;
+}
+
+/* Ambient background orbs */
+.ambientBg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+}
+
+.orb:nth-child(1) {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(201, 150, 58, 0.18), transparent 70%);
+    top: -100px;
+    left: -100px;
+}
+
+.orb:nth-child(2) {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(26, 74, 138, 0.12), transparent 70%);
+    bottom: -80px;
+    right: -80px;
+}
+
+.orb:nth-child(3) {
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(45, 106, 79, 0.1), transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-10) var(--space-8);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.spinner {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    color: var(--gold);
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: var(--space-1);
+}
+
+.liveInsight {
+    font-size: 0.82rem;
+    color: var(--gold);
+    font-weight: 500;
+    min-height: 1.4em;
+}
+
+/* Progress bar */
+.progressWrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.progressTrack {
+    flex: 1;
+    height: 6px;
+    background: var(--parchment-dark);
+    border-radius: var(--radius-full);
+    position: relative;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
+    border-radius: var(--radius-full);
+    min-width: 4%;
+    transition: width 0.8s ease;
+}
+
+.progressGlow {
+    position: absolute;
+    top: -2px;
+    width: 12px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    filter: blur(4px);
+    transform: translateX(-50%);
+    opacity: 0.8;
+    transition: left 0.8s ease;
+}
+
+.progressPct {
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--ink-soft);
+    min-width: 34px;
+    text-align: right;
+}
+
+/* Pipeline steps */
+.pipeline {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    transition: background var(--duration-fast) var(--ease-out);
+    position: relative;
+    overflow: hidden;
+}
+
+.step.done {
+    opacity: 0.6;
+}
+
+.step.active {
+    background: var(--gold-pale);
+    border: 1px solid rgba(201, 150, 58, 0.25);
+}
+
+.step.pending {
+    opacity: 0.35;
+}
+
+.stepIconWrap {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.step.done .stepIconWrap {
+    color: var(--emerald);
+}
+
+.stepEmoji {
+    font-size: 14px;
+    line-height: 1;
+    display: block;
+}
+
+.stepDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--parchment-border);
+    display: block;
+    margin: auto;
+}
+
+.stepText {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stepLabel {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+}
+
+.stepDesc {
+    font-size: 0.74rem;
+    color: var(--gold);
+    font-weight: 400;
+    line-height: 1.4;
+    display: block;
+    overflow: hidden;
+}
+
+.activePulse {
+    position: absolute;
+    right: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+}
+
+/* Current stage */
+.currentStage {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    text-align: center;
+    font-style: italic;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--parchment-border);
+}

@@ -1,0 +1,215 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-6);
+    background: var(--parchment);
+    border-bottom: 1px solid var(--parchment-border);
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.toolbarLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.toolbarLabel {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+}
+
+.translatedBadge {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--cobalt);
+    background: #e8f0f9;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    border: 1px solid #c5d8f0;
+}
+
+.toolbarRight {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.translateWrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--surface);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-full);
+    padding: 5px var(--space-3) 5px var(--space-3);
+    color: var(--ink-muted);
+    transition: border-color var(--duration-fast);
+}
+
+.translateWrap:focus-within {
+    border-color: var(--gold);
+}
+
+.langSelect {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.8rem;
+    color: var(--ink);
+    font-weight: 500;
+    cursor: pointer;
+    max-width: 170px;
+}
+
+.translateSpinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--parchment-border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.iconBtn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--ink-soft);
+    border: 1px solid var(--parchment-border);
+    background: var(--surface);
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.iconBtn:hover {
+    background: var(--parchment-dark);
+    color: var(--ink);
+}
+
+/* Markdown body */
+.markdownBody {
+    padding: var(--space-8) var(--space-10);
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.mdH2 {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: var(--space-8) 0 var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 2px solid var(--gold-pale);
+    letter-spacing: -0.02em;
+}
+
+.mdH2:first-child {
+    margin-top: 0;
+}
+
+.mdH3 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink-mid);
+    margin: var(--space-6) 0 var(--space-3);
+    letter-spacing: -0.01em;
+}
+
+.mdP {
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.75;
+    margin-bottom: var(--space-4);
+}
+
+.mdUl,
+.mdOl {
+    padding-left: var(--space-6);
+    margin-bottom: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.mdLi {
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.65;
+}
+
+.mdUl .mdLi::marker {
+    color: var(--gold);
+}
+
+.mdStrong {
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.mdBlockquote {
+    border-left: 3px solid var(--gold);
+    padding: var(--space-3) var(--space-5);
+    margin: var(--space-5) 0;
+    background: var(--gold-pale);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+.mdHr {
+    border: none;
+    border-top: 1px solid var(--parchment-border);
+    margin: var(--space-6) 0;
+}
+
+.mdCodeInline {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    background: var(--parchment-dark);
+    border: 1px solid var(--parchment-border);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--cobalt);
+}
+
+.mdPre {
+    background: var(--ink);
+    color: var(--parchment);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    overflow-x: auto;
+    margin: var(--space-4) 0;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+}

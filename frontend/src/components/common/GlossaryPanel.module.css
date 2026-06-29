@@ -1,0 +1,118 @@
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 14, 12, 0.35);
+    z-index: 200;
+    backdrop-filter: blur(2px);
+}
+
+.panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 360px;
+    background: var(--surface);
+    border-left: 1px solid var(--parchment-border);
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+}
+
+.panelHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--parchment-border);
+}
+
+.panelTitle {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.panelSub {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-top: 3px;
+}
+
+.closeBtn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--ink-soft);
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.closeBtn:hover {
+    background: var(--parchment-dark);
+    color: var(--ink);
+}
+
+.searchWrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--parchment-border);
+    color: var(--ink-muted);
+}
+
+.searchInput {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.85rem;
+    color: var(--ink);
+}
+
+.searchInput::placeholder {
+    color: var(--ink-muted);
+}
+
+.termList {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.empty {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: var(--space-8);
+}
+
+.termCard {
+    background: var(--parchment);
+    border: 1px solid var(--parchment-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+}
+
+.termWord {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--cobalt);
+    display: block;
+    margin-bottom: var(--space-2);
+}
+
+.termMeaning {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
