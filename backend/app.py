@@ -3,6 +3,7 @@ from flask_cors import CORS
 
 from werkzeug.utils import secure_filename
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 # =========================
 # IMPORT YOUR MODULES
@@ -102,38 +103,41 @@ def upload():
     chunks = chunk_document(clean_text)
 
     # =========================
-    # STEP 4: CLASSIFY
+    # STEP 4: CLASSIFY (Parallelized)
     # =========================
-    classified_chunks = []
-
-    for chunk in chunks:
+    def process_classify(chunk):
         try:
             result = classify_chunk(chunk["text"])
-
-            classified_chunks.append({
+            return {
                 "text": chunk["text"],
                 "label": result["label"],
                 "confidence": result["confidence"]
-            })
-
-        except:
-            classified_chunks.append({
+            }
+        except Exception as e:
+            print(f"⚠️ Classification failed for chunk: {e}")
+            return {
                 "text": chunk["text"],
                 "label": "General",
                 "confidence": 0.0
-            })
+            }
+
+    print(f"🚀 Classifying {len(chunks)} chunks in parallel...")
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        classified_chunks = list(executor.map(process_classify, chunks))
 
     # =========================
-    # STEP 5: SIMPLIFY
+    # STEP 5: SIMPLIFY (Parallelized)
     # =========================
-    simplified_chunks = []
-
-    for chunk in classified_chunks:
+    def process_simplify(chunk):
         try:
-            simplified = simplify_chunk(chunk, client, MODEL_NAME)
-            simplified_chunks.append(simplified)
-        except:
-            simplified_chunks.append("Error in simplification")
+            return simplify_chunk(chunk, client, MODEL_NAME)
+        except Exception as e:
+            print(f"⚠️ Simplification failed for chunk: {e}")
+            return "Error in simplification"
+
+    print(f"🚀 Simplifying {len(classified_chunks)} chunks in parallel...")
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        simplified_chunks = list(executor.map(process_simplify, classified_chunks))
 
     final_input = "\n\n".join(simplified_chunks)
 
