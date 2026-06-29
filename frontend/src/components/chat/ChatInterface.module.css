@@ -299,3 +299,27 @@
   color: var(--ink-muted);
   text-align: center;
 }
+
+.keyboardToggle {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+}
+
+.keyboardToggle:hover {
+  background: var(--parchment-dark);
+  color: var(--ink);
+}
+
+.keyboardToggleActive {
+  background: var(--gold-pale);
+  color: var(--gold);
+  border: 1px solid var(--gold-light);
+}

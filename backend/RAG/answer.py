@@ -30,24 +30,31 @@ def retrieve_chunks(collection, question, model, k=3):
 # =========================
 def answer_question(question, collection, structured_data, client, MODEL, model, chat_history):
 
-    print("🔍 Retrieving relevant chunks...")
-
-    relevant_chunks = retrieve_chunks(collection, question, model)
-
-    # =========================
-    # FILTER CHUNKS
-    # =========================
-    filtered_chunks = [
-        chunk for chunk in relevant_chunks
-        if chunk["score"] < 1.5
-    ]
-
-    if not filtered_chunks:
-        context = "No relevant context found."
+    if collection is None:
+        print("⚠️ No collection active (no document uploaded yet). Skipping retrieval.")
+        context = "No document uploaded yet."
     else:
-        context = "\n\n".join(chunk["text"] for chunk in filtered_chunks)
+        print("🔍 Retrieving relevant chunks...")
+        try:
+            relevant_chunks = retrieve_chunks(collection, question, model)
+            
+            # =========================
+            # FILTER CHUNKS
+            # =========================
+            filtered_chunks = [
+                chunk for chunk in relevant_chunks
+                if chunk["score"] < 1.5
+            ]
 
-    print(f"📊 Retrieved {len(filtered_chunks)} relevant chunks")
+            if not filtered_chunks:
+                context = "No relevant context found."
+            else:
+                context = "\n\n".join(chunk["text"] for chunk in filtered_chunks)
+
+            print(f"📊 Retrieved {len(filtered_chunks)} relevant chunks")
+        except Exception as e:
+            print(f"⚠️ Retrieval failed: {str(e)}")
+            context = "No relevant context found."
 
     # =========================
     # SYSTEM PROMPT
@@ -56,11 +63,13 @@ def answer_question(question, collection, structured_data, client, MODEL, model,
 You are a legal assistant chatbot.
 
 STRICT RULES:
-- Answer ONLY using CONTEXT
-- If answer is NOT clearly in CONTEXT → say "Not found in document"
-- Do NOT use outside knowledge
-- Keep answers simple and clear
-- STRUCTURED DATA is secondary (use only if needed)
+- If the user query is a greeting (e.g., "hi", "hello", "hey", "good morning") or a conversational inquiry like "who are you" or "how can you help", greet them back politely, introduce yourself as the JanNyaya Legal Assistant, and invite them to ask questions about the uploaded document.
+- If no document has been uploaded yet (i.e., CONTEXT is 'No document uploaded yet'), and the user asks a document-related question, politely inform them that they need to upload a legal document first.
+- For all other questions, answer ONLY using the CONTEXT and STRUCTURED DATA.
+- If the answer to a document-related question is NOT clearly in CONTEXT → say "Not found in document".
+- Do NOT use outside knowledge for document-related questions.
+- Keep answers simple and clear.
+- STRUCTURED DATA is secondary (use only if needed).
 
 CONTEXT:
 {context}

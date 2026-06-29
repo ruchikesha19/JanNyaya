@@ -13,7 +13,7 @@ from services.chunking import chunk_document
 from services.classifier import classify_chunk
 from services.simplifier import simplify_chunk, final_simplification
 from services.vocabulary import extract_legal_vocab
-from services.multilingual import translate_text_single
+from services.multilingual import translate_text_single, detect_indic_language, translate_to_english
 
 from RAG.injest import ingest_document, delete_collection, model
 from RAG.answer import answer_question
@@ -178,8 +178,17 @@ def chat():
     data = request.json
     question = data.get("question")
 
+    # Detect if the query is in an Indic language
+    detected_lang = detect_indic_language(question)
+    query_for_rag = question
+
+    if detected_lang:
+        print(f"🌐 Detected Indic language '{detected_lang}' in query. Translating to English...")
+        query_for_rag = translate_to_english(question, detected_lang)
+        print(f"👉 Translated query: {query_for_rag}")
+
     answer = answer_question(
-        question,
+        query_for_rag,
         CURRENT_COLLECTION,
         STRUCTURED_DATA,
         client,
@@ -188,10 +197,20 @@ def chat():
         CHAT_HISTORY
     )
 
-    CHAT_HISTORY.append({"role": "user", "content": question})
+    final_answer = answer
+    if detected_lang:
+        print(f"🌐 Translating response back to '{detected_lang}'...")
+        try:
+            final_answer = translate_text_single(answer, detected_lang)
+        except Exception as e:
+            print(f"⚠️ Translation back failed: {str(e)}")
+            final_answer = answer
+
+    # Keep backend history in English for RAG LLM stability
+    CHAT_HISTORY.append({"role": "user", "content": query_for_rag})
     CHAT_HISTORY.append({"role": "assistant", "content": answer})
 
-    return jsonify({"answer": answer})
+    return jsonify({"answer": final_answer})
 
 
 # =========================

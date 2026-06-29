@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../store/useAppStore'
 import { useChat } from '../../hooks/useChat'
+import { transliterate } from '../../utils/transliteration'
+import LanguageKeypad from './LanguageKeypad'
 import styles from './ChatInterface.module.css'
 
 const SUGGESTED_QUESTIONS = [
@@ -16,8 +18,100 @@ export default function ChatInterface() {
   const { chatHistory, chatLoading } = useAppStore()
   const { sendMessage } = useChat()
   const [input, setInput] = useState('')
+  const [keypadOpen, setKeypadOpen] = useState(false)
+  const [currentLanguage, setCurrentLanguage] = useState('Hindi')
+  const [inputMode, setInputMode] = useState('translit')
+
   const bottomRef = useRef()
   const textareaRef = useRef()
+
+  const handleKeyPress = (char) => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const text = ta.value
+    const before = text.substring(0, start)
+    const after = text.substring(end)
+    const newVal = before + char + after
+    setInput(newVal)
+    
+    setTimeout(() => {
+      ta.focus()
+      ta.selectionStart = ta.selectionEnd = start + char.length
+    }, 0)
+  }
+
+  const handleBackspace = () => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const text = ta.value
+    if (start === 0 && end === 0) return
+    
+    let before = ''
+    let after = ''
+    let newCursor = 0
+    
+    if (start !== end) {
+      before = text.substring(0, start)
+      after = text.substring(end)
+      newCursor = start
+    } else {
+      before = text.substring(0, start - 1)
+      after = text.substring(start)
+      newCursor = start - 1
+    }
+    
+    const newVal = before + after
+    setInput(newVal)
+    
+    setTimeout(() => {
+      ta.focus()
+      ta.selectionStart = ta.selectionEnd = newCursor
+    }, 0)
+  }
+
+  const handleClear = () => {
+    setInput('')
+    if (textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }
+
+  const handleChange = (e) => {
+    const val = e.target.value
+    
+    if (keypadOpen && inputMode === 'translit') {
+      const cursorPosition = e.target.selectionStart
+      const textBeforeCursor = val.slice(0, cursorPosition)
+      const textAfterCursor = val.slice(cursorPosition)
+      
+      const words = textBeforeCursor.split(/(\s+)/)
+      const transliteratedWords = words.map((w, idx) => {
+        // Only transliterate if it contains Latin characters and is followed by whitespace (i.e. not the last word)
+        if (/[a-zA-Z]/.test(w) && idx < words.length - 1) {
+          return transliterate(w, currentLanguage)
+        }
+        return w
+      })
+      
+      const newTextBeforeCursor = transliteratedWords.join('')
+      const newVal = newTextBeforeCursor + textAfterCursor
+      setInput(newVal)
+      
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const diff = newVal.length - val.length
+          textareaRef.current.selectionStart = cursorPosition + diff
+          textareaRef.current.selectionEnd = cursorPosition + diff
+        }
+      }, 0)
+    } else {
+      setInput(val)
+    }
+  }
 
   // Auto scroll to latest message
   useEffect(() => {
@@ -33,8 +127,21 @@ export default function ChatInterface() {
   }, [input])
 
   const handleSend = () => {
-    const q = input.trim()
+    let q = input.trim()
     if (!q || chatLoading) return
+    
+    if (keypadOpen && inputMode === 'translit') {
+      // Force translit the entire input one last time
+      const words = q.split(/(\s+)/)
+      const finalWords = words.map(w => {
+        if (/[a-zA-Z]/.test(w)) {
+          return transliterate(w, currentLanguage)
+        }
+        return w
+      })
+      q = finalWords.join('').trim()
+    }
+    
     setInput('')
     sendMessage(q)
   }
@@ -151,13 +258,21 @@ export default function ChatInterface() {
           <textarea
             ref={textareaRef}
             className={styles.textarea}
-            placeholder="Ask a question about the document..."
+            placeholder={keypadOpen && inputMode === 'translit' ? `Type phonetically in ${currentLanguage}...` : "Ask a question about the document..."}
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={handleChange}
             onKeyDown={handleKeyDown}
             disabled={chatLoading}
             rows={1}
           />
+          <button
+            type="button"
+            className={`${styles.keyboardToggle} ${keypadOpen ? styles.keyboardToggleActive : ''}`}
+            onClick={() => setKeypadOpen(!keypadOpen)}
+            title="Toggle Regional Language Keyboard"
+          >
+            <KeyboardIcon />
+          </button>
           <button
             className={`${styles.sendBtn} ${(!input.trim() || chatLoading) ? styles.sendDisabled : ''}`}
             onClick={handleSend}
@@ -169,6 +284,19 @@ export default function ChatInterface() {
         </div>
         <p className={styles.hint}>Press Enter to send · Shift+Enter for newline</p>
       </div>
+
+      {keypadOpen && (
+        <LanguageKeypad
+          currentLanguage={currentLanguage}
+          setCurrentLanguage={setCurrentLanguage}
+          inputMode={inputMode}
+          setInputMode={setInputMode}
+          onKeyPress={handleKeyPress}
+          onBackspace={handleBackspace}
+          onClear={handleClear}
+          onClose={() => setKeypadOpen(false)}
+        />
+      )}
     </motion.div>
   )
 }
@@ -214,5 +342,22 @@ function SpinIcon() {
     >
       <path d="M21 12a9 9 0 1 1-9-9"/>
     </motion.svg>
+  )
+}
+
+function KeyboardIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
+      <line x1="6" y1="8" x2="6" y2="8" />
+      <line x1="10" y1="8" x2="10" y2="8" />
+      <line x1="14" y1="8" x2="14" y2="8" />
+      <line x1="18" y1="8" x2="18" y2="8" />
+      <line x1="6" y1="12" x2="6" y2="12" />
+      <line x1="10" y1="12" x2="10" y2="12" />
+      <line x1="14" y1="12" x2="14" y2="12" />
+      <line x1="18" y1="12" x2="18" y2="12" />
+      <line x1="7" y1="16" x2="17" y2="16" />
+    </svg>
   )
 }
