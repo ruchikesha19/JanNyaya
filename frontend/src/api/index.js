@@ -62,3 +62,17 @@ export const cleanupSession = async () => {
         console.error('Cleanup failed:', err)
     }
 }
+
+export const fetchHistory = async () => {
+    const res = await client.get('/history')
+    return res.data.history
+}
+
+export const loadHistoryItem = async (fileHash) => {
+    const res = await client.post('/history/load', { file_hash: fileHash })
+    return res.data
+}
+
+export const deleteHistoryItem = async (fileHash) => {
+    await client.delete(`/history/${fileHash}`)
+}

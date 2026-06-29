@@ -3,6 +3,9 @@ from flask_cors import CORS
 
 from werkzeug.utils import secure_filename
 import os
+import json
+import hashlib
+import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 # =========================
@@ -30,6 +33,9 @@ CORS(app)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+HISTORY_FOLDER = "history"
+os.makedirs(HISTORY_FOLDER, exist_ok=True)
 
 MODEL_NAME = "qwen2.5:3b"
 # MODEL_NAME = "llama3"
@@ -63,6 +69,7 @@ CURRENT_COLLECTION = None
 CURRENT_SESSION_ID = None
 CHAT_HISTORY = []
 STRUCTURED_DATA = ""
+CURRENT_FILE_HASH = None
 
 
 # =========================
@@ -78,13 +85,44 @@ def home():
 @app.route("/upload", methods=["POST"])
 def upload():
 
-    global CURRENT_COLLECTION, CURRENT_SESSION_ID, STRUCTURED_DATA, CHAT_HISTORY
+    global CURRENT_COLLECTION, CURRENT_SESSION_ID, STRUCTURED_DATA, CHAT_HISTORY, CURRENT_FILE_HASH
 
     file = request.files["file"]
     filename = secure_filename(file.filename)
 
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
+
+    # =========================
+    # CACHE CHECK: Compute file hash
+    # =========================
+    with open(filepath, "rb") as f:
+        file_bytes = f.read()
+    file_hash = hashlib.sha256(file_bytes).hexdigest()
+    CURRENT_FILE_HASH = file_hash
+    cache_path = os.path.join(HISTORY_FOLDER, f"{file_hash}.json")
+
+    if os.path.exists(cache_path):
+        print(f"⚡ Cache hit! Loading '{filename}' from history...")
+        with open(cache_path, "r", encoding="utf-8") as cf:
+            cached = json.load(cf)
+        # Restore session from cache
+        STRUCTURED_DATA = cached["final_output"]
+        CHAT_HISTORY = []
+        CURRENT_SESSION_ID, CURRENT_COLLECTION = ingest_document(cached["chunks"])
+        # Update access timestamp
+        cached["last_accessed"] = datetime.datetime.utcnow().isoformat()
+        with open(cache_path, "w", encoding="utf-8") as cf:
+            json.dump(cached, cf, ensure_ascii=False, indent=2)
+        return jsonify({
+            "raw_text": cached["raw_text"],
+            "cleaned_text": cached["cleaned_text"],
+            "chunks": cached["chunks"],
+            "chunks_count": len(cached["chunks"]),
+            "final_output": cached["final_output"],
+            "vocab": cached["vocab"],
+            "from_cache": True
+        })
 
     # =========================
     # STEP 1: EXTRACT
@@ -159,6 +197,24 @@ def upload():
     CHAT_HISTORY = []
 
     # =========================
+    # SAVE TO HISTORY CACHE
+    # =========================
+    cache_entry = {
+        "file_hash": file_hash,
+        "filename": filename,
+        "analyzed_at": datetime.datetime.utcnow().isoformat(),
+        "last_accessed": datetime.datetime.utcnow().isoformat(),
+        "raw_text": raw_text,
+        "cleaned_text": clean_text,
+        "chunks": classified_chunks,
+        "final_output": final_output,
+        "vocab": vocab
+    }
+    with open(cache_path, "w", encoding="utf-8") as cf:
+        json.dump(cache_entry, cf, ensure_ascii=False, indent=2)
+    print(f"✅ Saved analysis to history cache: {cache_path}")
+
+    # =========================
     # RESPONSE
     # =========================
     return jsonify({
@@ -167,7 +223,8 @@ def upload():
         "chunks": classified_chunks,
         "chunks_count": len(classified_chunks),
         "final_output": final_output,
-        "vocab": vocab
+        "vocab": vocab,
+        "from_cache": False
     })
 
 
@@ -244,6 +301,81 @@ def cleanup():
         delete_collection(CURRENT_SESSION_ID)
 
     return jsonify({"status": "deleted"})
+
+
+# =========================
+# HISTORY: LIST
+# =========================
+@app.route("/history", methods=["GET"])
+def list_history():
+    entries = []
+    for fname in os.listdir(HISTORY_FOLDER):
+        if fname.endswith(".json"):
+            fpath = os.path.join(HISTORY_FOLDER, fname)
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                entries.append({
+                    "file_hash": data.get("file_hash"),
+                    "filename": data.get("filename"),
+                    "analyzed_at": data.get("analyzed_at"),
+                    "last_accessed": data.get("last_accessed"),
+                    "chunks_count": len(data.get("chunks", []))
+                })
+            except Exception as e:
+                print(f"⚠️ Could not read history file {fname}: {e}")
+    entries.sort(key=lambda x: x.get("last_accessed", ""), reverse=True)
+    return jsonify({"history": entries})
+
+
+# =========================
+# HISTORY: LOAD
+# =========================
+@app.route("/history/load", methods=["POST"])
+def load_history():
+    global CURRENT_COLLECTION, CURRENT_SESSION_ID, STRUCTURED_DATA, CHAT_HISTORY, CURRENT_FILE_HASH
+
+    data = request.json
+    file_hash = data.get("file_hash")
+    cache_path = os.path.join(HISTORY_FOLDER, f"{file_hash}.json")
+
+    if not os.path.exists(cache_path):
+        return jsonify({"error": "History entry not found"}), 404
+
+    with open(cache_path, "r", encoding="utf-8") as cf:
+        cached = json.load(cf)
+
+    STRUCTURED_DATA = cached["final_output"]
+    CHAT_HISTORY = []
+    CURRENT_FILE_HASH = file_hash
+    CURRENT_SESSION_ID, CURRENT_COLLECTION = ingest_document(cached["chunks"])
+
+    # Update access time
+    cached["last_accessed"] = datetime.datetime.utcnow().isoformat()
+    with open(cache_path, "w", encoding="utf-8") as cf:
+        json.dump(cached, cf, ensure_ascii=False, indent=2)
+
+    return jsonify({
+        "raw_text": cached["raw_text"],
+        "cleaned_text": cached["cleaned_text"],
+        "chunks": cached["chunks"],
+        "chunks_count": len(cached["chunks"]),
+        "final_output": cached["final_output"],
+        "vocab": cached["vocab"],
+        "from_cache": True
+    })
+
+
+# =========================
+# HISTORY: DELETE
+# =========================
+@app.route("/history/<file_hash>", methods=["DELETE"])
+def delete_history(file_hash):
+    cache_path = os.path.join(HISTORY_FOLDER, f"{file_hash}.json")
+    if os.path.exists(cache_path):
+        os.remove(cache_path)
+        return jsonify({"status": "deleted"})
+    return jsonify({"error": "Not found"}), 404
 
 
 # =========================

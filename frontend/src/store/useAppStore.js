@@ -18,6 +18,7 @@ export const useAppStore = create((set, get) => ({
     activeTab: 'summary', // summary | chunks | chat
     sidebarOpen: false,
     glossaryOpen: false,
+    historyOpen: false,
 
     // Chat
     chatHistory: [],
@@ -50,6 +51,7 @@ export const useAppStore = create((set, get) => ({
     setActiveTab: (tab) => set({ activeTab: tab }),
     setSidebarOpen: (v) => set({ sidebarOpen: v }),
     setGlossaryOpen: (v) => set({ glossaryOpen: v }),
+    setHistoryOpen: (v) => set({ historyOpen: v }),
 
     addChatMessage: (msg) => set(state => ({
         chatHistory: [...state.chatHistory, msg]
